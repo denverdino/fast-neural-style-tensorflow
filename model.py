@@ -6,7 +6,8 @@ def conv2d(x, input_filters, output_filters, kernel, strides, mode='REFLECT'):
 
         shape = [kernel, kernel, input_filters, output_filters]
         weight = tf.Variable(tf.truncated_normal(shape, stddev=0.1), name='weight')
-        x_padded = tf.pad(x, [[0, 0], [kernel / 2, kernel / 2], [kernel / 2, kernel / 2], [0, 0]], mode=mode)
+        half_kernel = int(kernel / 2)
+        x_padded = tf.pad(x, [[0, 0], [half_kernel, half_kernel], [half_kernel, half_kernel], [0, 0]], mode=mode)
         return tf.nn.conv2d(x_padded, weight, strides=[1, strides, strides, 1], padding='VALID', name='conv')
 
 
@@ -19,7 +20,7 @@ def conv2d_transpose(x, input_filters, output_filters, kernel, strides):
         batch_size = tf.shape(x)[0]
         height = tf.shape(x)[1] * strides
         width = tf.shape(x)[2] * strides
-        output_shape = tf.pack([batch_size, height, width, output_filters])
+        output_shape = tf.stack([batch_size, height, width, output_filters])
         return tf.nn.conv2d_transpose(x, weight, output_shape, strides=[1, strides, strides, 1], name='conv_transpose')
 
 
@@ -51,7 +52,7 @@ def instance_norm(x):
 
     mean, var = tf.nn.moments(x, [1, 2], keep_dims=True)
 
-    return tf.div(tf.sub(x, mean), tf.sqrt(tf.add(var, epsilon)))
+    return tf.div(tf.subtract(x, mean), tf.sqrt(tf.add(var, epsilon)))
 
 
 def batch_norm(x, size, training, decay=0.999):
@@ -121,6 +122,6 @@ def net(image, training):
     # Remove border effect reducing padding.
     height = tf.shape(y)[1]
     width = tf.shape(y)[2]
-    y = tf.slice(y, [0, 10, 10, 0], tf.pack([-1, height - 20, width - 20, -1]))
+    y = tf.slice(y, [0, 10, 10, 0], tf.stack([-1, height - 20, width - 20, -1]))
 
     return y
